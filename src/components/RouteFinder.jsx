@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Autocomplete } from "@react-google-maps/api";
 
 function RouteFinder({ onSearch }) {
@@ -7,13 +7,18 @@ function RouteFinder({ onSearch }) {
   const [originRef, setOriginRef] = useState(null);
   const [destinationRef, setDestinationRef] = useState(null);
 
-  const handleSearch = () => {
+  const handleOriginLoad = useCallback((ref) => {
+    setOriginRef(ref);
+  }, []);
+
+  const handleDestinationLoad = useCallback((ref) => {
+    setDestinationRef(ref);
+  }, []);
+
+  const handleSearch = useCallback(() => {
     if (originRef && destinationRef) {
       const originPlace = originRef.getPlace();
       const destinationPlace = destinationRef.getPlace();
-  
-      console.log("🟢 originPlace:", originPlace);
-      console.log("🟢 destinationPlace:", destinationPlace);
   
       if (!originPlace || !destinationPlace) {
         alert("❌ 正しい場所を選択してください！");
@@ -22,9 +27,6 @@ function RouteFinder({ onSearch }) {
   
       const originLocation = originPlace.geometry?.location;
       const destinationLocation = destinationPlace.geometry?.location;
-  
-      console.log("✅ 出発地（緯度・経度）:", originLocation);
-      console.log("✅ 目的地（緯度・経度）:", destinationLocation);
   
       if (originLocation && destinationLocation) {
         onSearch(
@@ -35,11 +37,14 @@ function RouteFinder({ onSearch }) {
         alert("⚠️ 位置情報を取得できませんでした");
       }
     }
-  };
+  }, [originRef, destinationRef, onSearch]);
 
   return (
     <div>
-      <Autocomplete onLoad={(ref) => setOriginRef(ref)}>
+      <Autocomplete
+        onLoad={handleOriginLoad}
+        onPlaceChanged={() => {}}
+      >
         <input
           type="text"
           placeholder="出発地"
@@ -47,7 +52,10 @@ function RouteFinder({ onSearch }) {
           value={origin}
         />
       </Autocomplete>
-      <Autocomplete onLoad={(ref) => setDestinationRef(ref)}>
+      <Autocomplete
+        onLoad={handleDestinationLoad}
+        onPlaceChanged={() => {}}
+      >
         <input
           type="text"
           placeholder="目的地"

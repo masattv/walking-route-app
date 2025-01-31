@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { GoogleMap, DirectionsService, DirectionsRenderer } from "@react-google-maps/api";
 
 const containerStyle = {
@@ -15,30 +15,41 @@ function MapComponent({ origin, destination }) {
   const [directions, setDirections] = useState(null);
   const [error, setError] = useState(null);
 
-  const directionsCallback = (response, status) => {
+  const directionsCallback = useCallback((response, status) => {
     if (response !== null) {
       if (status === "OK") {
         setDirections(response);
+        setError(null);
       } else {
         console.error("Directions request failed due to " + status);
         setError(status);
       }
     }
-  };
+  }, []);
+
+  const directionsOptions = useMemo(() => {
+    if (!origin || !destination) return null;
+    return {
+      destination: destination,
+      origin: origin,
+      travelMode: "WALKING"
+    };
+  }, [origin, destination]);
 
   return (
-    <GoogleMap mapContainerStyle={containerStyle} center={center} zoom={14}>
-      {origin && destination && (
+    <GoogleMap
+      mapContainerStyle={containerStyle}
+      center={center}
+      zoom={14}
+    >
+      {directionsOptions && (
         <DirectionsService
-          options={{
-            destination: destination,
-            origin: origin,
-            travelMode: "WALKING",
-          }}
+          options={directionsOptions}
           callback={directionsCallback}
         />
       )}
       {directions && <DirectionsRenderer directions={directions} />}
+      {error && <div style={{ color: "red" }}>ルート検索エラー: {error}</div>}
     </GoogleMap>
   );
 }
